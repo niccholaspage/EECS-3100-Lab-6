@@ -156,6 +156,9 @@ Debug_Capture
 	LDR R2, =NVIC_ST_CURRENT_R ; Load the address of where NVIC_ST_CURRENT_R is located
 	LDR R3, [R2] ; Put the value of NVIC_ST_CURRENT into R3
 	STR R3, [R1] ; Store the value NVIC_ST_CURRENT into the data TimePt points to
+
+	ADD R1, #4 ; Increment our pointer by 4
+	STR R1, [R0] ; Store our pointer into TimePt
 	BX LR
 
 
