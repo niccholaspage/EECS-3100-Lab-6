@@ -90,20 +90,6 @@ loop  BL   Debug_Capture
 ; Initializes the debugging instrument
 ; Note: push/pop an even number of registers so C compiler is happy
 Debug_Init
-	; init SysTick
-	LDR R1, =NVIC_ST_CTRL_R
-	MOV R0, #0 ; disable SysTick during setup
-	STR R0, [R1]
-	LDR R1, =NVIC_ST_RELOAD_R ; R1 = &NVIC_ST_RELOAD_R
-	LDR R0, =0x00FFFFFF; ; maximum reload value
-	STR R0, [R1] ; [R1] = R0 = NVIC_ST_RELOAD_M
-	LDR R1, =NVIC_ST_CURRENT_R ; R1 = &NVIC_ST_CURRENT_R
-	MOV R0, #0 ; any write to current clears it
-	STR R0, [R1] ; clear counter
-	LDR R1, =NVIC_ST_CTRL_R ; enable SysTick with core clock
-	MOV R0, #0x05
-	STR R0, [R1] ; ENABLE and CLK_SRC bits set
-	; end init SysTick
 	
 	; Place 0xFFFF FFFF into all elements of DataBuffer
 	LDR R0, =DataBuffer
@@ -142,6 +128,21 @@ TimeContinue
 	LDR R0, =TimeBuffer	; Load address of time buffer into R0
 	LDR R1, =TimePt		; Load address of time pointer into R0
 	STR R0, [R1] ; Point TimePt to the address of the time buffer
+
+	; init SysTick
+	LDR R1, =NVIC_ST_CTRL_R
+	MOV R0, #0 ; disable SysTick during setup
+	STR R0, [R1]
+	LDR R1, =NVIC_ST_RELOAD_R ; R1 = &NVIC_ST_RELOAD_R
+	LDR R0, =0x00FFFFFF; ; maximum reload value
+	STR R0, [R1] ; [R1] = R0 = NVIC_ST_RELOAD_M
+	LDR R1, =NVIC_ST_CURRENT_R ; R1 = &NVIC_ST_CURRENT_R
+	MOV R0, #0 ; any write to current clears it
+	STR R0, [R1] ; clear counter
+	LDR R1, =NVIC_ST_CTRL_R ; enable SysTick with core clock
+	MOV R0, #0x05
+	STR R0, [R1] ; ENABLE and CLK_SRC bits set
+	; end init SysTick
 
 	BX LR
 
