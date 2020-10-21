@@ -235,7 +235,7 @@ Turn_On_LED_PortF
 ; Initializes the debugging instrument
 ; Note: push/pop an even number of registers so C compiler is happy
 Debug_Init
-	
+	PUSH {R0-R3} ; Save R0-R3
 	; Place 0xFFFF FFFF into all elements of DataBuffer
 	LDR R0, =DataBuffer
 DataArray_Init
@@ -289,6 +289,8 @@ TimeContinue
 	STR R0, [R1] ; ENABLE and CLK_SRC bits set
 	; end init SysTick
 
+	POP {R0-R3} ; Restore R0-R3
+
 	BX LR
 
 ;------------Debug_Capture------------
@@ -320,9 +322,10 @@ Debug_Capture
 	AND R0, #0x03
 	
 	; Step 5. Shift Port E data bit 1 to 4, leave bit 0 in 0 position
-	LSRS R12, R0, #0x01 ; Shift to the right 1 bit
-	ORRNE R0, #0x10 ; Set bit 4 to 1 if Port E data bit 1 was on
-	ADDNE R0, #0x02 ; Clear bit 1
+	TST R0, #0x1 ; Check if bit 0 in data is on
+	LSL R0, #0x03 ; Shift to the left 3 bits
+	ADDEQ R0, #0x10 ; Clear bit 3 if original bit 0 was on
+	ORREQ R0, #0x01 ; Set bit 0 to 1 if original bit 0 was on
 
 	; Step 6. Dump modified data into DataBuffer
 	; We want to store our current data at the correct element of the data buffer:
