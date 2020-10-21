@@ -58,7 +58,6 @@ DataBuffer	SPACE	SIZE*4
 TimeBuffer	SPACE	SIZE*4
 DataPt		SPACE	4
 TimePt		SPACE	4
-ArrayIndex	SPACE	4
 ;These names MUST be exported
 	EXPORT DataBuffer  
 	EXPORT TimeBuffer  
@@ -304,6 +303,17 @@ Debug_Capture
 	LDR R12, =DataPt ; Loads the address of the data pointer into R0
 	LDR R0, [R12] ; Loads the actual data pointer into R0
 	LDR R1, =DataBuffer ; Loads the address of the data buffer into R1
+	LDR R2, =SIZE ; Load the size of our buffer into R1
+	LSL R2, #0x02 ; Multiply our size by 4, for 4 bytes, utilizing a logical shift of 2 bits
+	ADD R1, R2 ; Add the beginning data buffer address and buffer size together
+	CMP R0, R1 ; Compare the address of our actual data pointer to the address at the end of the buffer
+	BHI Debug_Capture_Done ; If its greater, we are done, no data capture!
+	
+	; Bandaid for overflow when dumping time data
+	; Step 2b. TimePt check
+	LDR R12, =TimePt ; Loads the address of the data pointer into R0
+	LDR R0, [R12] ; Loads the actual data pointer into R0
+	LDR R1, =TimeBuffer ; Loads the address of the data buffer into R1
 	LDR R2, =SIZE ; Load the size of our buffer into R1
 	LSL R2, #0x02 ; Multiply our size by 4, for 4 bytes, utilizing a logical shift of 2 bits
 	ADD R1, R2 ; Add the beginning data buffer address and buffer size together
