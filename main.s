@@ -72,19 +72,164 @@ ArrayIndex	SPACE	4
       IMPORT  TExaS_Init
 
 Start BL   TExaS_Init  ; running at 80 MHz, scope voltmeter on PD3
-      ; initialize Port E
-      ; initialize Port F
-      ; initialize debugging dump, including SysTick
-	  ; ?????:
-	  BL Debug_Init
+
+	; SYSCTL_RCGCGPIO_R = 0x30 for Port F & E
+	MOV R0, #0x30
+	LDR R1, =SYSCTL_RCGCGPIO_R
+	STR R0, [R1]
+	; initialize Port E
+InitPortE
+	
+	LDR R0, [R1] ; Delay before continuing
+
+	; GPIO_PORTE_AMSEL_R = 0x00
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTE_AMSEL_R
+	STR R0, [R1]
+	
+	; GPIO_PORTE_PCTL_R = 0x00
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTE_PCTL_R
+	STR R0, [R1]
+
+	; GPIO_PORTE_DIR_R = 0x01
+	MOV R0, #0x01
+	LDR R1, =GPIO_PORTE_DIR_R
+	STR R0, [R1]
+
+	; GPIO_PORTE_AFSEL_R = 0x00
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTE_AFSEL_R
+	STR R0, [R1]
+
+	; GPIO_PORTE_DEN_R = 0x03
+	MOV R0, #0x03
+	LDR R1, =GPIO_PORTE_DEN_R
+	STR R0, [R1]
+	
+	; Turns LED on
+	MOV R0, #0x01
+	LDR R1, =GPIO_PORTE_DATA_R
+	STR R0, [R1]
+InitPortF
+	; initialize Port F
+	LDR R0, [R1] ; Delay before continuing
+
+	; Before writing to the CR register,
+	; we must first unlock Port F.
+	; Since we can't write a 32-bit constant
+	; directly, we use MOV & MOVT together to
+	; do it in two 16-bit parts.
+	; GPIO_PORTF_LOCK_R = 0x4C4F434B
+	MOV R0, #0x434B
+	MOVT R0, #0x4C4F
+	LDR R1, =GPIO_PORTF_LOCK_R
+	STR R0, [R1]
+
+	; GPIO_PORTF_CR_R = 0x04
+	MOV R0, #0x04
+	LDR R1, =GPIO_PORTF_CR_R
+	STR R0, [R1]
+
+	; GPIO_PORTF_AMSEL_R = 0x00
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTF_AMSEL_R
+	STR R0, [R1]
+	
+	; GPIO_PORTF_PCTL_R = 0x00
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTF_PCTL_R
+	STR R0, [R1]
+
+	; GPIO_PORTF_DIR_R = 0x04
+	MOV R0, #0x04
+	LDR R1, =GPIO_PORTF_DIR_R
+	STR R0, [R1]
+
+	; GPIO_PORTF_AFSEL_R = 0x00
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTF_AFSEL_R
+	STR R0, [R1]
+
+	; GPIO_PORTF_PUR_R = 0x10
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTF_PUR_R
+	STR R0, [R1]
+
+	; GPIO_PORTF_DEN_R = 0x18
+	MOV R0, #0x04
+	LDR R1, =GPIO_PORTF_DEN_R
+	STR R0, [R1]
+
+	; initialize debugging dump, including SysTick
+	BL Debug_Init
 
 
-      CPSIE  I    ; TExaS voltmeter, scope runs on interrupts
-loop  BL   Debug_Capture
-      ;heartbeat
-      ; Delay
-      ;input PE1 test output PE0
-	  B    loop
+	CPSIE  I    ; TExaS voltmeter, scope runs on interrupts
+loop
+	BL   Debug_Capture
+	;heartbeat
+	BL Heartbeat
+	; Delay
+	BL Delay62ms
+	  
+	; input PE1 test output PE0
+	LDR R1, =GPIO_PORTE_DATA_R ; Load the address of Port E data into R1
+	LDR R0, [R1] ; Load the value at the address in R1 into R0
+	LSR R0, #1 ; Shift the register 1 bit to the right, since we only care about pin 1
+	CBNZ R0, Toggle_LED_PortE ; Since the switch is on, we toggle the LED
+	; The switch is off, so turn the LED on
+	MOV R0, #0x01
+	LDR R1, =GPIO_PORTE_DATA_R
+	STR R0, [R1]
+	B    loop
+
+Toggle_LED_PortE ; Toggles the LED
+	; Read Port E data so we can check if LED is on or not
+	LDR R1, =GPIO_PORTE_DATA_R
+	LDR R0, [R1] ; Load the value at the address in R1 into R0
+	AND R0, #0x01 ; Clear all bits except for bit zero
+	CBZ R0, Turn_LED_On_PortE ; If the LED is off, then we turn it on
+	; Otherwise, turn the LED off
+	MOV R0, #0x00
+	LDR R1, =GPIO_PORTE_DATA_R
+	STR R0, [R1]
+	B loop ; Loop again!
+
+Turn_LED_On_PortE
+	; Turns LED on
+	MOV R0, #0x01
+	LDR R1, =GPIO_PORTE_DATA_R
+	STR R0, [R1]
+	B loop ; Loop again!
+
+; A subroutine that delays for 62 ms then returns to the original line
+Delay62ms
+	MOV R12, #0xD000 ; set R12 to our big number to get us our 62 ms delay
+	MOVT R12, #0x12 ; Needed so we can fill the upper halfword of the register too
+WaitForDelay
+	SUBS R12, R12, #0x01 ; Subtract one from the register
+	BNE WaitForDelay ; If the value isn't zero, go back to waiting for the delay
+	BX LR ; We did it, we finished waiting! So we go back to where we were before calling this.
+
+Heartbeat
+	PUSH {R0, R1} ; save R0 and R1
+	LDR R1, =GPIO_PORTF_DATA_R ; Load address of Port F data into R1
+	LDR R0, [R1] ; Load actual data into R0
+	CMP R0, #0x00 ; Check if R0 is 0, meaning the LED is off.
+	BEQ Turn_On_LED_PortF ; turn the LED on if it is off
+	; Otherwise, just turn off the LED
+	MOV R0, #0x00 ; Move 0x00 into data to turn the LED off
+	LDR R1, =GPIO_PORTF_DATA_R ; Load the address of Port F data into R1
+	STR R0, [R1] ; Store 0x00 into GPIO_PORTF_DATA_R
+	POP {R0, R1} ; restore R0 and R1
+	BX LR ; go back to caller
+Turn_On_LED_PortF
+	MOV R0, #0x04 ; Move 0x04 into data to turn the LED on
+	LDR R1, =GPIO_PORTF_DATA_R ; Load the address of Port F data into R1
+	STR R0, [R1] ; Store 0x04 into GPIO_PORTF_DATA_R
+	POP {R0, R1} ; restore R0 and R1
+	BX LR ; go back to caller
 
 ;------------Debug_Init------------
 ; Initializes the debugging instrument
@@ -150,16 +295,59 @@ TimeContinue
 ; Dump Port E and time into buffers
 ; Note: push/pop an even number of registers so C compiler is happy
 Debug_Capture
-	; We want to store our current time at the correct element of the time buffer:
-	LDR R0, =TimePt ; Load the address of memory where our time pointer is into R0
-	LDR R1, [R0] ; Load the value TimePt points to into R1
-	LDR R2, =NVIC_ST_CURRENT_R ; Load the address of where NVIC_ST_CURRENT_R is located
-	LDR R3, [R2] ; Put the value of NVIC_ST_CURRENT into R3
-	STR R3, [R1] ; Store the value NVIC_ST_CURRENT into the data TimePt points to
+	; Step 1. Save registers:
+	PUSH { R0-R4, R12 }
+	
+	; Step 2. Return immediately if the buffers are full
+	LDR R12, =DataPt ; Loads the address of the data pointer into R0
+	LDR R0, [R12] ; Loads the actual data pointer into R0
+	LDR R1, =DataBuffer ; Loads the address of the data buffer into R1
+	LDR R2, =SIZE ; Load the size of our buffer into R1
+	LSL R2, #0x02 ; Multiply our size by 4, for 4 bytes, utilizing a logical shift of 2 bits
+	ADD R1, R2 ; Add the beginning data buffer address and buffer size together
+	CMP R0, R1 ; Compare the address of our actual data pointer to the address at the end of the buffer
+	BHI Debug_Capture_Done ; If its greater, we are done, no data capture!
 
-	ADD R1, #4 ; Increment our pointer by 4
-	STR R1, [R0] ; Store our pointer into TimePt
-	BX LR
+	; Step 3. Read Port E data
+	LDR R12, =GPIO_PORTE_DATA_R ; Load the address of where GPIO_PORTE_DATA is located
+	LDR R0, [R12] ; Put the value of GPIO_PORTE_DATA into R0
+
+	; Step 3. Read NVIC_ST_CURRENT data
+	LDR R12, =NVIC_ST_CURRENT_R ; Load the address of where NVIC_ST_CURRENT_R is located
+	LDR R1, [R12] ; Put the value of NVIC_ST_CURRENT into R1
+	
+	; Step 4. Mask capturing just bits 0 and 1 of the Port E data
+	AND R0, #0x03
+	
+	; Step 5. Shift Port E data bit 1 to 4, leave bit 0 in 0 position
+	LSRS R12, R0, #0x01 ; Shift to the right 1 bit
+	ORRNE R0, #0x10 ; Set bit 4 to 1 if Port E data bit 1 was on
+	ADDNE R0, #0x02 ; Clear bit 1
+
+	; Step 6. Dump modified data into DataBuffer
+	; We want to store our current data at the correct element of the data buffer:
+	LDR R12, =DataPt ; Load the address of memory where our data pointer is into R0
+	LDR R2, [R12] ; Load the value DataPt points to into R2
+	STR R0, [R2] ; Store our modified data into R2
+	
+	; Step 7. Increment DataPt to next address
+	ADD R2, #4 ; Increment our pointer by 4
+	STR R2, [R12] ; Store our pointer into DataPt
+
+	; Step 8. Dump time into TimeBuffer
+	; We want to store our current time at the correct element of the time buffer:
+	LDR R12, =TimePt ; Load the address of memory where our time pointer is into R0
+	LDR R3, [R12] ; Load the value TimePt points to into R3
+	STR R1, [R3] ; Store the value NVIC_ST_CURRENT into the data TimePt points to
+
+	; Step 9. Increment TimePt to next address
+	ADD R3, #4 ; Increment our pointer by 4
+	STR R3, [R12] ; Store our pointer into TimePt
+
+Debug_Capture_Done
+	; Step 10. Restore saved registers and return
+	POP { R0-R4, R12 }
+	BX LR ; Go back to the caller!
 
 
     ALIGN      ; make sure the end of this section is aligned
