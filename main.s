@@ -322,10 +322,10 @@ Debug_Capture
 	AND R0, #0x03
 	
 	; Step 5. Shift Port E data bit 1 to 4, leave bit 0 in 0 position
-	TST R0, #0x1 ; Check if bit 0 in data is on
+	TST R0, #0x01 ; Check if bit 0 in data is on
 	LSL R0, #0x03 ; Shift to the left 3 bits
-	ADDEQ R0, #0x10 ; Clear bit 3 if original bit 0 was on
-	ORREQ R0, #0x01 ; Set bit 0 to 1 if original bit 0 was on
+	ANDNE R0, #0x10 ; Clear bit 3 if original bit 0 was on
+	ORRNE R0, #0x01 ; Set bit 0 to 1 if original bit 0 was on
 
 	; Step 6. Dump modified data into DataBuffer
 	; We want to store our current data at the correct element of the data buffer:
