@@ -299,6 +299,12 @@ TimeContinue
 ; Dump Port E and time into buffers
 ; Note: push/pop an even number of registers so C compiler is happy
 Debug_Capture
+	; Estimating intrusiveness:
+	; Debug_Capture contains 30 instructions
+	; 30 * 2 cycles * 12.5 nanoseconds = 750 nanoseconds
+	; Total delay: 62 ms + 0.00075 ms = 62.00075 ms
+	; 0.00075 ms / 62.00075 ms = 0.00001209662 * 100 = 0.001209662% intrusiveness
+	; Therefore, the instrusiveness was incredibly small.
 	; Step 1. Save registers:
 	PUSH { R0-R4, R12 }
 	
