@@ -204,8 +204,11 @@ Turn_LED_On_PortE
 
 ; A subroutine that delays for 62 ms then returns to the original line
 Delay62ms
-	MOV R12, #0xD000 ; set R12 to our big number to get us our 62 ms delay
-	MOVT R12, #0x12 ; Needed so we can fill the upper halfword of the register too
+	; MOV R12, #0xD000 ; set R12 to our big number to get us our 62 ms delay
+	; MOVT R12, #0x12 ; Needed so we can fill the upper halfword of the register too
+	; Number updated! Due to new debugging code, we have to shorten our delay.
+	MOV R12, #0xB000
+	MOVT R12, #0xC
 WaitForDelay
 	SUBS R12, R12, #0x01 ; Subtract one from the register
 	BNE WaitForDelay ; If the value isn't zero, go back to waiting for the delay
