@@ -1,13 +1,13 @@
 ;*******************************************************************
 ; main.s
-; Author: ***update this***
-; Date Created: 11/18/2016
-; Last Modified: 11/18/2016
-; Section Number: ***update this***
-; Instructor: ***update this***
+; Author: Nicholas Nassar
+; Date Created: 10/20/2020
+; Last Modified: 10/22/2020
+; Section Number: 002
+; Instructor: Devinder Kaur
 ; Lab number: 6
 ; Brief description of the program
-;   If the switch is presses, the LED toggles at 8 Hz
+; If the switch is pressed, the LED toggles at 8 Hz.
 ; Hardware connections
 ;   PE1 is switch input  (1 means pressed, 0 means not pressed)
 ;   PE0 is LED output (1 activates external LED on protoboard) 
