@@ -206,7 +206,8 @@ Turn_LED_On_PortE
 Delay62ms
 	; MOV R12, #0xD000 ; set R12 to our big number to get us our 62 ms delay
 	; MOVT R12, #0x12 ; Needed so we can fill the upper halfword of the register too
-	; Number updated! Due to new debugging code, we have to shorten our delay.
+	; Number updated! Due to differences in LaunchPad
+	; vs. simulator, we have to shorten our delay.
 	MOV R12, #0xB000
 	MOVT R12, #0xC
 WaitForDelay
@@ -304,7 +305,7 @@ Debug_Capture
 	; 30 * 2 cycles * 12.5 nanoseconds = 750 nanoseconds
 	; Total delay: 62 ms + 0.00075 ms = 62.00075 ms
 	; 0.00075 ms / 62.00075 ms = 0.00001209662 * 100 = 0.001209662% intrusiveness
-	; Therefore, the instrusiveness was incredibly small.
+	; Therefore, the intrusiveness was incredibly small.
 	; Step 1. Save registers:
 	PUSH { R0-R4, R12 }
 	
