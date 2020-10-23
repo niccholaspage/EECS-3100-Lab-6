@@ -64,14 +64,14 @@ TimePt		SPACE	4
 	EXPORT DataPt [DATA,SIZE=4] 
 	EXPORT TimePt [DATA,SIZE=4]
     
-      ALIGN          
-      AREA    |.text|, CODE, READONLY, ALIGN=2
-      THUMB
-      EXPORT  Start
-      IMPORT  TExaS_Init
+	ALIGN
+	AREA    |.text|, CODE, READONLY, ALIGN=2
+	THUMB
+	EXPORT  Start
+	IMPORT  TExaS_Init
 
-Start BL   TExaS_Init  ; running at 80 MHz, scope voltmeter on PD3
-
+Start
+	BL   TExaS_Init  ; running at 80 MHz, scope voltmeter on PD3
 	; SYSCTL_RCGCGPIO_R = 0x30 for Port F & E
 	MOV R0, #0x30
 	LDR R1, =SYSCTL_RCGCGPIO_R
